@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NirmanSetu - Cloud Connected Labor Portal</title>
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- External CSS -->
+  <link rel="stylesheet" href="style.css" />
+  <!-- Supabase Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen flex flex-col items-center">
+
+  <!-- Mobile View Container -->
+  <div class="w-full max-w-md bg-white min-h-screen shadow-lg flex flex-col">
+    
+    <!-- Top Header with Language Toggle -->
+    <header class="bg-blue-700 text-white p-4 flex justify-between items-center sticky top-0 z-40">
+      <div>
+        <h1 class="text-xl font-black flex items-center gap-2 tracking-tight">
+          <i class="fa-solid fa-shield-halved text-yellow-400"></i> <span data-i18n="app_title">NirmanSetu</span>
+        </h1>
+        <p class="text-[11px] text-blue-200" data-i18n="app_tagline">Verified & Protected Labor Portal</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- Language Switcher Button -->
+        <button onclick="toggleLanguage()" class="text-xs bg-blue-800 hover:bg-blue-900 border border-blue-400 text-white font-bold px-2.5 py-1 rounded-md flex items-center gap-1 transition shadow-xs">
+          <i class="fa-solid fa-globe text-yellow-300"></i> <span id="langBtnText">हिंदी</span>
+        </button>
+
+        <!-- User Status Badge -->
+        <div id="authStatusBadge" class="text-xs bg-blue-800 px-2.5 py-1 rounded-full border border-blue-600 flex items-center gap-1">
+          <i class="fa-solid fa-circle text-[8px] text-yellow-400" id="authDot"></i>
+          <span id="authStatusText">Guest</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Role Switcher Tabs -->
+    <div class="grid grid-cols-2 bg-gray-50 border-b border-gray-200 sticky top-[68px] z-30">
+      <button id="tabContractor" onclick="switchRole('contractor')" class="py-3 text-center font-bold text-blue-700 border-b-2 border-blue-700 flex justify-center items-center gap-2 text-xs sm:text-sm">
+        <i class="fa-solid fa-user-tie"></i> <span data-i18n="tab_contractor">Contractor View</span>
+      </button>
+      <button id="tabLabor" onclick="switchRole('labor')" class="py-3 text-center font-bold text-gray-500 border-b-2 border-transparent flex justify-center items-center gap-2 text-xs sm:text-sm">
+        <i class="fa-solid fa-person-digging"></i> <span data-i18n="tab_labor">Laborer View</span>
+      </button>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="p-4 flex-1 overflow-y-auto space-y-4">
+      
+      <!-- ================= SIDE 1: CONTRACTOR VIEW ================= -->
+      <section id="contractorSection">
+        <div class="flex justify-between items-center mb-3">
+          <div>
+            <h2 class="font-bold text-gray-800 text-base" data-i18n="contractor_heading">Find Workers</h2>
+            <p class="text-[11px] text-gray-500" data-i18n="contractor_subheading">Contact details protected from spam</p>
+          </div>
+          <button onclick="toggleModal('workerModal')" class="bg-blue-700 hover:bg-blue-800 text-white text-xs px-3 py-2 rounded-lg shadow-sm font-semibold flex items-center gap-1">
+            <i class="fa-solid fa-plus"></i> <span data-i18n="btn_post_availability">Post Availability</span>
+          </button>
+        </div>
+
+        <!-- Filter Area -->
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <select id="workerAreaFilter" onchange="renderWorkers()" class="border text-xs rounded-lg p-2.5 bg-gray-50 font-medium">
+            <option value="ALL" data-i18n="opt_all_areas">All Areas (Lucknow)</option>
+            <option value="Gomti Nagar">Gomti Nagar</option>
+            <option value="Indira Nagar">Indira Nagar</option>
+            <option value="Alambagh">Alambagh</option>
+            <option value="Hazratganj">Hazratganj</option>
+          </select>
+          <select id="workerTradeFilter" onchange="renderWorkers()" class="border text-xs rounded-lg p-2.5 bg-gray-50 font-medium">
+            <option value="ALL" data-i18n="opt_all_trades">All Trades</option>
+            <option value="Mason" data-i18n="opt_trade_mason">🧱 Mason (Mistri)</option>
+            <option value="Helper" data-i18n="opt_trade_helper">👷 Helper / Beldar</option>
+            <option value="Painter" data-i18n="opt_trade_painter">🎨 Painter</option>
+            <option value="Electrician" data-i18n="opt_trade_electrician">⚡ Electrician</option>
+          </select>
+        </div>
+
+        <!-- Worker List Container -->
+        <div id="workerList" class="space-y-3">
+          <div class="text-center py-8 text-gray-400 text-xs">Loading workers from cloud database...</div>
+        </div>
+      </section>
+
+      <!-- ================= SIDE 2: LABORER VIEW ================= -->
+      <section id="laborSection" class="hidden">
+        <div class="flex justify-between items-center mb-3">
+          <div>
+            <h2 class="font-bold text-gray-800 text-base" data-i18n="labor_heading">Find Work Sites</h2>
+            <p class="text-[11px] text-gray-500" data-i18n="labor_subheading">Direct work without middleman</p>
+          </div>
+          <button onclick="toggleModal('jobModal')" class="bg-green-700 hover:bg-green-800 text-white text-xs px-3 py-2 rounded-lg shadow-sm font-semibold flex items-center gap-1">
+            <i class="fa-solid fa-plus"></i> <span data-i18n="btn_post_work">Post Work Site</span>
+          </button>
+        </div>
+
+        <!-- Job Area Filter -->
+        <div class="mb-3">
+          <select id="jobAreaFilter" onchange="renderJobs()" class="w-full border text-xs rounded-lg p-2.5 bg-gray-50 font-medium">
+            <option value="ALL" data-i18n="opt_all_jobs_area">Search by Location (All)</option>
+            <option value="Gomti Nagar">Gomti Nagar</option>
+            <option value="Indira Nagar">Indira Nagar</option>
+            <option value="Alambagh">Alambagh</option>
+            <option value="Hazratganj">Hazratganj</option>
+          </select>
+        </div>
+
+        <!-- Job List Container -->
+        <div id="jobList" class="space-y-3">
+          <div class="text-center py-8 text-gray-400 text-xs">Loading jobs from cloud database...</div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Security Footer -->
+    <footer class="p-3 bg-slate-50 border-t text-center text-xs text-slate-500">
+      <div class="flex items-center justify-center gap-1 font-medium text-slate-600">
+        <i class="fa-solid fa-cloud text-blue-600"></i> <span data-i18n="footer_title">Live Cloud Database Connected</span>
+      </div>
+      <p class="text-[10px] text-slate-400 mt-0.5" data-i18n="footer_sub">Use your 4-digit PIN to delete your post once hired.</p>
+    </footer>
+  </div>
+
+  <!-- ================= MODAL: REGISTER WORKER ================= -->
+  <div id="workerModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl p-5 w-full max-w-sm shadow-xl">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="font-bold text-base text-gray-800" data-i18n="m_worker_title">Register Worker Profile</h3>
+        <button onclick="toggleModal('workerModal')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      
+      <form id="workerForm" onsubmit="saveWorker(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block text-gray-600 font-semibold mb-1" data-i18n="lbl_name">Full Name</label>
+          <input type="text" id="wName" required class="w-full border rounded-lg p-2 bg-gray-50" placeholder="e.g. Ramesh Verma" />
+        </div>
+        <div>
+          <label class="block text-gray-600 font-semibold mb-1" data-i18n="lbl_trade">Trade / Skill</label>
+          <select id="wTrade" class="w-full border rounded-lg p-2 bg-gray-50">
+            <option value="Mason" data-i18n="opt_trade_mason">Mason (Mistri)</option>
+            <option value="Helper" data-i18n="opt_trade_helper">Helper / Beldar</option>
+            <option value="Painter" data-i18n="opt_trade_painter">Painter</option>
+            <option value="Electrician" data-i18n="opt_trade_electrician">Electrician</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-gray-600 font-semibold mb-1" data-i18n="lbl_area">Location / Area</label>
+          <select id="wArea" class="w-full border rounded-lg p-2 bg-gray-50">
+            <option value="Gomti Nagar">Gomti Nagar</option>
+            <option value="Indira Nagar">Indira Nagar</option>
+            <option value="Alambagh">Alambagh</option>
+            <option value="Hazratganj">Hazratganj</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-gray-600 font-semibold mb-1" data-i18n="lbl_wage">Daily Wage Expectation (₹)</label>
+          <input type="number" id="wWage" required class="w-full border rounded-lg p-2 bg-gray-50" placeholder="e.g. 700" />
+        </div>
+        <div>
+          <label class="block text-gray-600 font-semibold mb-1" data-i18n="lbl_phone">Phone Number (Keep Safe)</label>
+          <input type="tel" id="wPhone" maxlength="10" required pattern="[0-9]{10}" class="w-full border rounded-lg p-2 bg-gray-50" placeholder="10-digit Mobile Number" />
+        </div>
+        <div class="p-2.5 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <label class="block text-yellow-800 font-bold mb-1" data-i18n="lbl_pin">Set 4-Digit Security PIN</label>
+          <p class="text-[10px] text-yellow-700 mb-1" data-i18n="lbl_pin_help_worker">You will need this PIN to delete your post once you get work.</p>
+          <input type="password" id="wPin" maxlength="4" required pattern="[0-9]{4}" class="w-full border border-yellow-300 rounded-lg p-2 bg-white text-center font-bold tracking-widest" placeholder="••••" />
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="toggleModal('workerModal')" class="w-1/2 py-2.5 border rounded-lg font-bold text-gray-600" data-i18n="btn_cancel">Cancel</button>
+          <button type="submit" id="wSubmitBtn" class="w-1/2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-bold" data-i18n="btn_publish">Publish Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: POST WORK SITE ================= -->
+  <div id="jobModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl p-5 w-full max-w-sm shadow-xl">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="font-bold text-base text-gray-800" data-i18n="m_job_title">Post Work Site Requirement</h3>
+        <button onclick="toggleModal('jobModal')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      
+      <form id="jobForm" onsubmit="saveJob(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block text-gray-600 font-semibold mb-1" data-i18n="lbl_job_req">Work Requirement</label>
+          <input type="text" id="jTitle" required class="w-full border rounded-lg p-2 bg-gray-50" placeholder="e.g. Need 2 Masons & 3 Helpers for 4 Days" />
+        </div>
+        <div>
+          <label class="block text-gray-600 font-semibold mb-1" data-i18n="lbl_contractor_name">Contractor / Site Name</label>
+          <input type="text" id="jContractor" required class="w-full border rounded-lg p-2 bg-gray-50" placeholder="e.g. Sharma Constructions" />
+        </div>
+        <div>
+          <label class="block text-gray-600 font-semibold mb-1" data-i18n="lbl_area">Location / Area</label>
+          <select id="jArea" class="w-full border rounded-lg p-2 bg-gray-50">
+            <option value="Gomti Nagar">Gomti Nagar</option>
+            <option value="Indira Nagar">Indira Nagar</option>
+            <option value="Alambagh">Alambagh</option>
+            <option value="Hazratganj">Hazratganj</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-gray-600 font-semibold mb-1" data-i18n="lbl_daily_rate">Offered Daily Rate (₹/day)</label>
+          <input type="number" id="jWage" required class="w-full border rounded-lg p-2 bg-gray-50" placeholder="e.g. 750" />
+        </div>
+        <div>
+          <label class="block text-gray-600 font-semibold mb-1" data-i18n="lbl_phone">Contact Phone</label>
+          <input type="tel" id="jPhone" maxlength="10" required pattern="[0-9]{10}" class="w-full border rounded-lg p-2 bg-gray-50" placeholder="10-digit Mobile Number" />
+        </div>
+        <div class="p-2.5 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <label class="block text-yellow-800 font-bold mb-1" data-i18n="lbl_pin">Set 4-Digit Security PIN</label>
+          <p class="text-[10px] text-yellow-700 mb-1" data-i18n="lbl_pin_help_job">Use this PIN to remove this post once labor requirement is fulfilled.</p>
+          <input type="password" id="jPin" maxlength="4" required pattern="[0-9]{4}" class="w-full border border-yellow-300 rounded-lg p-2 bg-white text-center font-bold tracking-widest" placeholder="••••" />
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="toggleModal('jobModal')" class="w-1/2 py-2.5 border rounded-lg font-bold text-gray-600" data-i18n="btn_cancel">Cancel</button>
+          <button type="submit" id="jSubmitBtn" class="w-1/2 py-2.5 bg-green-700 hover:bg-green-800 text-white rounded-lg font-bold" data-i18n="btn_post_site">Post Work Site</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: UNLOCK CONTACT NUMBER ================= -->
+  <div id="unlockModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl p-5 w-full max-w-sm shadow-xl">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="font-bold text-sm text-gray-800 flex items-center gap-1.5">
+          <i class="fa-solid fa-lock-open text-blue-600"></i> <span data-i18n="m_unlock_title">Unlock Direct Contact</span>
+        </h3>
+        <button onclick="toggleModal('unlockModal')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="text-xs text-gray-500 mb-3" data-i18n="m_unlock_sub">To prevent spam calls and verify genuine callers, please enter your details once.</p>
+      
+      <form id="unlockForm" onsubmit="verifyAndUnlock(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block text-gray-600 font-semibold mb-1" data-i18n="lbl_your_name">Your Name</label>
+          <input type="text" id="viewerName" required class="w-full border rounded-lg p-2 bg-gray-50" placeholder="e.g. Vikas Singh" />
+        </div>
+        <div>
+          <label class="block text-gray-600 font-semibold mb-1" data-i18n="lbl_your_phone">Your Mobile Number</label>
+          <input type="tel" id="viewerPhone" maxlength="10" required pattern="[0-9]{10}" class="w-full border rounded-lg p-2 bg-gray-50" placeholder="10-digit Mobile Number" />
+        </div>
+        <button type="submit" class="w-full py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-bold mt-2" data-i18n="btn_verify_reveal">
+          Verify & Reveal Number
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: PIN VERIFICATION FOR DELETION ================= -->
+  <div id="deleteModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl p-5 w-full max-w-xs shadow-xl text-center">
+      <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-2 text-lg">
+        <i class="fa-solid fa-trash-can"></i>
+      </div>
+      <h3 class="font-bold text-sm text-gray-800" data-i18n="m_delete_title">Remove Listing</h3>
+      <p class="text-xs text-gray-500 mb-3" data-i18n="m_delete_sub">Enter your 4-digit PIN to delete this listing.</p>
+      
+      <form id="deleteForm" onsubmit="confirmDelete(event)" class="space-y-3 text-xs">
+        <input type="password" id="deletePinInput" maxlength="4" required pattern="[0-9]{4}" class="w-full border rounded-lg p-2 text-center text-base font-bold tracking-widest bg-gray-50" placeholder="••••" />
+        <p id="deleteError" class="text-red-500 text-[11px] hidden font-semibold" data-i18n="err_incorrect_pin">Incorrect PIN. Please try again.</p>
+        <div class="flex gap-2 pt-1">
+          <button type="button" onclick="toggleModal('deleteModal')" class="w-1/2 py-2 border rounded-lg font-bold text-gray-600" data-i18n="btn_cancel">Cancel</button>
+          <button type="submit" id="deleteSubmitBtn" class="w-1/2 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold" data-i18n="btn_delete">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- External JavaScript -->
+  <script src="app.js"></script>
+</body>
+</html>

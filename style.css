@@ -1,0 +1,16 @@
+/* Custom resets & micro-animations */
+@layer utilities {
+  .backdrop-blur-xs {
+    backdrop-filter: blur(2px);
+  }
+}
+
+/* Smooth scrolling for mobile view container */
+main {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom transitions */
+button, select, input {
+  transition: all 0.2s ease-in-out;
+}
