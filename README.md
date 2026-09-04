@@ -1,9 +1,9 @@
 # labor-connect
 A mobile-first, bilingual (Hindi/English) web portal connecting construction contractors and daily-wage laborers directly, featuring anti-spam contact protection and PIN-secured post management powered by Supabase.
-#  NirmanSetu (निर्माणसेतु)
+#  MyLabor11 (निर्माणसेतु)
 **Direct, Secure & Bilingual Construction Labor Marketplace**
 
-NirmanSetu is a mobile-first web platform designed to bridge the gap between daily-wage construction workers and contractors/site supervisors. It eliminates middlemen, enabling direct hiring while protecting workers from spam and phone scraping.
+MyLabor11 is a mobile-first web platform designed to bridge the gap between daily-wage construction workers and contractors/site supervisors. It eliminates middlemen, enabling direct hiring while protecting workers from spam and phone scraping.
 
 ---
 
